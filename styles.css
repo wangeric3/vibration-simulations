@@ -1,0 +1,226 @@
+body,html {
+    margin:0;
+    padding:0;
+    font-family: mainFont;
+}
+
+@font-face {
+    font-family: mainFont;
+    src: url(font/Roboto-Regular.ttf);
+}
+
+h2{
+    margin: 15px 0 15px 5px;
+}
+
+
+.btn {
+    border: none; /* Remove borders */
+    color: white; /* Add a text color */
+    /*padding: 14px auto 14px auto; !* Add some padding (top, right bottom left)*!*/
+    cursor: pointer; /* Add a pointer cursor on mouse-over */
+    /*font-family: mainFont;*/
+    font-family: mainFont;
+}
+
+.default {background-color: #e7e7e7; color: black;} /* Gray */
+.default:hover {background: #ddd;}
+
+.content {
+    max-width: 2000px;
+    margin: auto;
+    /*white-space: nowrap;*/
+}
+
+/*#header_div{*/
+    /*background: #a8edb0;*/
+/*}*/
+
+p{
+    margin: 5px;
+    font-size: 12px;
+}
+
+.content > div{
+    float: left;
+    display: table;
+    margin-right: 5px;
+    margin-left: 5px;
+    margin-top: 20px;
+}
+
+#col1{
+    width: calc(20% - 10px);
+}
+
+#col1 h4{
+    margin: auto;
+}
+
+#col2{
+    width: calc(20% - 10px);
+}
+
+#col2 button{
+    display: block;
+    font-size: 20px;
+    margin-top: 5px;
+    width: 75%;
+    margin-left:auto;
+    margin-right:auto;
+    padding-top: 14px;
+    padding-bottom: 14px;
+    padding-left: auto;
+    padding-right: auto;
+}
+
+#col3 button{
+    margin-top: 5px;
+    margin-right: 10px;
+    font-size: 15px;
+    padding: 10px 10px;
+}
+
+/*#col3{*/
+    /*width: calc(60% - 10px);*/
+/*}*/
+
+/* The slider  */
+.slider {
+    -webkit-appearance: none;  /* Override default CSS styles */
+    appearance: none;
+    width: 75%; /* Full-width */
+    height: 10px; /* Specified height */
+    background: #d3d3d3; /* Grey background */
+    outline: none; /* Remove outline */
+    opacity: 0.7; /* Set transparency (for mouse-over effects on hover) */
+    -webkit-transition: .2s; /* 0.2 seconds transition on hover */
+    transition: opacity .2s;
+}
+
+/* Mouse-over effects */
+.slider:hover {
+    opacity: 1; /* Fully shown on mouse-over */
+}
+
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none; /* Override default look */
+    appearance: none;
+    width: 7px; /* Set a specific slider handle width */
+    height: 18px; /* Slider handle height */
+    /*background: #4CAF50; !* Green background *!*/
+    cursor: pointer; /* Cursor on hover */
+}
+
+#init_div .slider::-webkit-slider-thumb {
+    background: black;
+}
+
+.activeInput .slider::-webkit-slider-thumb{
+    background: #4CAF50;
+}
+
+.inactiveInput .slider::-webkit-slider-thumb{
+    background: gray;
+}
+
+
+#ext_div .slider::-webkit-slider-thumb {
+    background: orangered;
+}
+
+.btn-group button {
+    background-color: #4CAF50; /* Green background */
+    border: 1px solid green; /* Green border */
+    color: white; /* White text */
+    padding: 10px 24px; /* Some padding */
+    cursor: pointer; /* Pointer/hand icon */
+    float: left; /* Float the buttons side by side */
+    margin-right: 5px;
+    margin-left: 5px;
+    width: calc(20% - 10px);
+    /*font-family: mainFont;*/
+
+}
+
+/* Clear floats (clearfix hack) */
+.btn-group:after {
+    content: "";
+    clear: both;
+    display: table;
+}
+
+/* Add a background color on hover */
+.btn-group button:hover {
+    background-color: #3e8e41;
+}
+
+
+.container {
+    display: block;
+    position: relative;
+    padding-left: 35px;
+    padding-top: 5px;
+    /*margin-bottom: 12px;*/
+    margin-top: 10px;
+    margin-right: 10px;
+    cursor: pointer;
+    font-size: 15px;
+    font-family: mainFont;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+/* Hide the browser's default checkbox */
+.container input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+}
+
+/* Create a custom checkbox */
+.checkmark {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 25px;
+    width: 25px;
+    background-color: #eee;
+}
+
+/* On mouse-over, add a grey background color */
+.container:hover input ~ .checkmark {
+    background-color: #ccc;
+}
+
+/* When the checkbox is checked, add a blue background */
+.container input:checked ~ .checkmark {
+    background-color: #4CAF50;
+}
+
+/* Create the checkmark/indicator (hidden when not checked) */
+.checkmark:after {
+    content: "";
+    position: absolute;
+    display: none;
+}
+
+/* Show the checkmark when checked */
+.container input:checked ~ .checkmark:after {
+    display: block;
+}
+
+/* Style the checkmark/indicator */
+.container .checkmark:after {
+    left: 9px;
+    top: 5px;
+    width: 5px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 3px 3px 0;
+    -webkit-transform: rotate(45deg);
+    -ms-transform: rotate(45deg);
+    transform: rotate(45deg);
+}

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0>
+    <link rel="stylesheet" href="styles.css">
+    <script src="lib/jquery-3.3.1.min.js"></script>
+    <script src="lib/p5.min.js"></script>
+    <script src="lib/p5.dom.min.js"></script>
+    <script src="sketch.js"></script>
+  </head>
+
+  <body>
+  <div id="header_div">
+    <h2 id="header">Case I: Free Vibration on Spring</h2>
+
+    <div class="btn-group" style="width:100%">
+      <button id="case1_button">Case I</button>
+      <button id="case3_button">Case III</button>
+      <button id="case4_button">Case IV</button>
+      <button id="case5_button">Case V</button>
+      <button id="case6_button">Case VI</button>
+    </div>
+  </div>
+
+
+    <div class="content">
+      <div id="col1">
+        <div id="init_div" >
+          <h4>Initial Conditions</h4>
+          <p id="xo_disp">xo: </p>
+          <input type="range" min="-1" max="1" value="0" step = "0.01" class="slider" id="xo_slider">
+          <p id="vo_disp">vo: </p>
+          <input type="range" min="-5" max="5" value="0" step = "0.01" class="slider" id="vo_slider">
+        </div>
+
+        <div id="sys_div" >
+          <h4>System Controls</h4>
+          <p id="k_disp">k: </p>
+          <input type="range" min="5" max="100" value="60" step = "0.1" class="slider" id="k_slider">
+          <p id="m_disp">m: </p>
+          <!--0 to 10mg-->
+          <input type="range" min="0.5" max="5" value="1" step = "0.1" class="slider" id="m_slider">
+          <p id="c_disp">c: </p>
+          <input type="range" min="0.1" max="30" value="2" step = "0.1" class="slider" id="c_slider">
+        </div>
+
+        <div id="der_div">
+          <h4>Derived Controls</h4>
+          <p id="wn_disp">wn: </p>
+          <input type="range" min="0.1" max="15" value="0.1" step = "0.01" class="slider" id="wn_slider">
+          <p id="z_disp">z: </p>
+          <input type="range" min="0.01" max="2" value="0.01" step = "0.01" class="slider" id="z_slider">
+          <p id="amp_disp" class="ext_controls">M: </p>
+          <input type="range" min="0.01" max="5" value="0.01" step = "0.01" class="slider ext_controls" id="amp_slider">
+        </div>
+
+        <div id="ext_div" class="ext_controls">
+          <h4>External Controls</h4>
+          <p id="w_disp">w: </p>
+          <input type="range" min="0.1" max="15" value="0.1" step = "0.1" class="slider" id="w_slider">
+          <p id="mag_disp">mag: </p>
+          <input type="range" min="0.01" max="5" value="0.01" step = "0.01" class="slider" id="mag_slider">
+        </div>
+      </div>
+
+        <div id="col2">
+          <div id="scene-holder"></div>
+
+          <button class="btn default" id="start_btn">Start</button>
+          <button class="btn default" id="stop_btn">Stop</button>
+          <button class="btn default" onclick="restart()">Reset</button>
+
+        </div>
+
+        <div id = "col3" >
+          <div id="graph-holder" ></div>
+          <button id="pos_graph" class="btn default">Position</button>
+          <button id="phase_plane" class="btn default">Phase Plane</button>
+            <button id="amp_graph" class="btn default ext_controls">Amplification</button>
+            <button id="phase_graph" class="btn default ext_controls">Phase Shift</button>
+
+
+          <label class="container ext_controls" style="float: right;">Show Transient
+            <input type="checkbox" checked="checked" id="transient_checkbox">
+            <span class="checkmark"></span>
+          </label>
+        </div>
+
+        <!--X resolution : <input type="range" min="1" max="15" value="1" class="slider" id="x_zoom">-->
+    </div>
+  </body>
+</html>
