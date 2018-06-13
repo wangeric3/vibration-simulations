@@ -820,7 +820,7 @@ function updateUI(){
     }
 
     if(sys.caseObj.caseNum > 3) {
-        ampDisp.innerHTML = "Amplification: " + sys.param.M.toFixed(2) + " Ns/m";
+        ampDisp.innerHTML = "Amplification: " + sys.param.M.toFixed(2);
         ampSlider.value = sys.param.M.toFixed(2);
 
         wDisp.innerHTML = "Frequency: " + sys.param.w.toFixed(2) + " rad/s";
@@ -882,11 +882,21 @@ function changeUI(){
         if(! col1.has('#ext_header').length){
             $(".ext_controls").show();
         }
+        switch (sys.caseObj.caseNum) {
+            case 4:
+                magSlider.setAttribute("max",30);
+                break;
+            case 5:
+                magSlider.setAttribute("max",0.5);
+                break;
+            case 6:
+                magSlider.setAttribute("max",1.5);
+                break;
+        }
     } else {
         $(".ext_controls").hide();
     }
 }
-
 
 window.onload = function() {
     col1 = $("#col1");
