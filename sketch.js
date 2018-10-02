@@ -18,8 +18,14 @@ var tNow = 0;
 var running = false;
 var showTransient = true;
 var normalInput = true;
+var newSys = false;
 
-var sys;
+var allSys = [];
+if (!Array.prototype.last){
+    Array.prototype.last = function(){
+        return this[this.length - 1];
+    };
+};
 
 var case1 = {
     caseNum: 1,
@@ -149,6 +155,7 @@ var case4 = {
         if(normalInput){
             p.wn = Math.sqrt(p.k/p.m);
             p.z = p.c/(2*Math.sqrt(p.k*p.m));
+            p.K = 1/p.k;
         }
         p.M = this.magnitude(p.w/p.wn,p.z);
 
@@ -159,7 +166,7 @@ var case4 = {
         }
         p.C = 0;
         p.phi = this.phaseShift(p.w/p.wn,p.z);
-        p.Xo = 1/p.k*p.Yo*p.M;
+        p.Xo = p.K*p.Yo*p.M;
         p.xoh = p.xo-p.C-p.Xo*Math.sin(p.phi);
         p.voh = p.vo - p.Xo*p.w*Math.cos(p.phi);
     }
@@ -224,6 +231,7 @@ var case5 = {
         if(normalInput){
             p.wn = Math.sqrt(p.k/p.m);
             p.z = p.c/(2*Math.sqrt(p.k*p.m));
+            p.K = 1;
         }
         p.M = this.magnitude(p.w/p.wn,p.z);
 
@@ -234,7 +242,7 @@ var case5 = {
         }
         p.C = 0;
         p.phi = this.phaseShift(p.w/p.wn,p.z);
-        p.Xo = p.Yo*p.M;
+        p.Xo = p.K*p.Yo*p.M;
         p.xoh = p.xo-p.C-p.Xo*Math.sin(p.phi);
         p.voh = p.vo - p.Xo*p.w*Math.cos(p.phi);
     },
@@ -301,6 +309,7 @@ var case6 = {
         if(normalInput){
             p.wn = Math.sqrt(p.k/(p.m+p.mo));
             p.z = p.c/(2*Math.sqrt(p.k*(p.m+p.mo)));
+            p.K = p.mo/p.m;
         }
         p.M = this.magnitude(p.w/p.wn,p.z);
 
@@ -312,7 +321,7 @@ var case6 = {
         p.C = 0;
         p.phi = this.phaseShift(p.w/p.wn,p.z);
 
-        p.Xo = p.mo/p.m*p.Yo*p.M;
+        p.Xo = p.K*p.Yo*p.M;
         p.xoh = p.xo-p.C-p.Xo*Math.sin(p.phi);
         p.voh = p.vo - p.w*p.Xo*Math.cos(p.phi);
     },
@@ -335,8 +344,8 @@ var scene = new p5( function( s ) {
             s.fill('white');
             s.strokeWeight(1);
             s.rect(sceneWidth/2,-scale*(this.position),this.width*scale,this.height*scale);
-            if(sys.caseObj.caseNum === 6){
-                var ballPos = sys.caseObj.ballPosition(tNow,sys.param,this.position);
+            if(allSys.last().caseObj.caseNum === 6){
+                var ballPos = allSys.last().caseObj.ballPosition(tNow,allSys.last().param,this.position);
                 s.strokeWeight(3);
                 s.line(sceneWidth/2,-this.position*scale,sceneWidth/2+ballPos.xPos*scale,-(ballPos.yPos+this.position)*scale);
                 s.strokeWeight(1);
@@ -347,16 +356,15 @@ var scene = new p5( function( s ) {
         };
 
         this.updatePosition = function(tNow){
-            this.position = sys.caseObj.boxPosition(tNow,sys.param)+sys.param.Lo + initBase;
+            this.position = allSys.last().caseObj.boxPosition(tNow,allSys.last().param)+allSys.last().param.Lo + initBase;
         }
     }
 
     //Base Object
     function Base(h){
         this.position = initBase;
-
         this.updatePosition = function(tNow){
-            this.position = sys.caseObj.basePosition(tNow,sys.param) + initBase;
+            this.position = allSys.last().caseObj.basePosition(tNow,allSys.last().param) + initBase;
         };
 
         this.draw = function(){
@@ -375,7 +383,7 @@ var scene = new p5( function( s ) {
         this.bottomAnchor = bottom;
         this.draw = function(){
             var mid;
-            if(sys.caseObj.caseNum < 3){
+            if(allSys.last().caseObj.caseNum < 3){
                 mid = sceneWidth/2
             } else {
                 mid = sceneWidth/2-top.width*scale*0.3;
@@ -398,14 +406,14 @@ var scene = new p5( function( s ) {
         this.bottomAnchor = bottom;
         this.draw = function(){
             var mid;
-            if(sys.caseObj.caseNum < 3){
+            if(allSys.last().caseObj.caseNum < 3){
                 mid = sceneWidth/2
             } else {
                 mid = sceneWidth/2+top.width*scale*0.3;
             }
             var l = this.topAnchor.position - this.bottomAnchor.position;
             var folds = 16;
-            var staticLength = sys.param.Lo;
+            var staticLength = allSys.last().param.Lo;
 
             s.fill(200);
             s.stroke(0);
@@ -413,21 +421,42 @@ var scene = new p5( function( s ) {
             s.line(mid,-this.bottomAnchor.position*scale,mid,-this.topAnchor.position*scale);
             s.rect(mid,-(l/2+this.bottomAnchor.position)*scale,20,30);
 
-            //U
-            // s.line(mid-10,-bottom.position*scale,mid+10,-bottom.position*scale);
-            // s.line(mid-10,-bottom.position*scale,mid-10,-(staticLength/2+bottom.position)*scale);
-            // s.line(mid+10,-bottom.position*scale,mid+10,-(staticLength/2+bottom.position)*scale);
-            // //T
-            // s.line(mid-10,-(l-staticLength*3/4+bottom.position)*scale,mid+10,-(l-staticLength*3/4+bottom.position)*scale);
-            // s.line(mid,-(-staticLength*3/4+top.position)*scale,mid,-top.position*scale);
-            // s.strokeWeight(1);
         };
     }
 
     //System Object
-    s.System = function(param,caseObj){
-        this.param = param;
-        this.caseObj = caseObj;
+    s.System = function(num){
+        switch (num){
+            case 1:
+                this.caseObj = case1;
+                this.param = case1.defaultParam;
+                break;
+            case 2:
+                this.caseObj = case2;
+                this.param = case2.defaultParam;
+                break;
+            case 3:
+                this.caseObj = case3;
+                this.param = case3.defaultParam;
+                break;
+            case 4:
+                this.caseObj = case4;
+                this.param = case4.defaultParam;
+                break;
+            case 5:
+                this.caseObj = case5;
+                this.param = case5.defaultParam;
+                break;
+            case 6:
+                this.caseObj = case6;
+                this.param = case6.defaultParam;
+                break;
+        }
+
+        this.posGraph = new graph.graphObj(graphWidth/5,graphWidth/5,1);
+        this.ampGraph = new graph.graphObj(graphWidth/4,canvasHeight/2,2);
+        this.phaseGraph = new graph.graphObj(graphWidth/4,canvasHeight/2,3);
+        this.phasePlane = new graph.graphObj(graphWidth/4,canvasHeight/2,4);
 
         this.box = new Box(1,1);
         this.base = new Base(0);
@@ -435,7 +464,7 @@ var scene = new p5( function( s ) {
         this.dashpot = new Dashpot(this.box,this.base);
 
         this.reCalc = function(){
-            caseObj.reCalc(param);
+            this.caseObj.reCalc(this.param);
             updateUI();
         };
 
@@ -447,7 +476,7 @@ var scene = new p5( function( s ) {
 
             this.base.draw();
             this.spring.draw();
-            if(caseObj.caseNum > 2){
+            if(this.caseObj.caseNum > 2){
                 this.dashpot.draw();
             }
             this.box.draw();
@@ -455,46 +484,44 @@ var scene = new p5( function( s ) {
     };
 
     s.setup = function() {
-        sceneWidth = $("#col1").width();//300;
+        sceneWidth = $("#col1").width();
+        graphWidth = ($("#col1").width()+10)*3-10;
         s.createCanvas(sceneWidth, sceneHeight);
         s.rectMode(s.CENTER);
-        sys = new this.System(case1.defaultParam,case1);
-        sys.caseObj.reCalc(sys.param);
+        allSys[0] = new this.System(1);
+        allSys.last().caseObj.reCalc(allSys.last().param);
     };
 
     s.draw = function() {
-        // console.log(s.frameRate());
         s.translate(0,sceneHeight);
         s.background(200);
 
         s.strokeWeight(1);
         s.fill(0);
         s.textSize(14);
-        s.text("0.5 m",5,-(sys.param.Lo+initBase+0.5)*scale-5);
-        s.text("-0.5 m",5,-(sys.param.Lo+initBase-0.5)*scale+15);
+        s.text("0.5 m",5,-(allSys.last().param.Lo+initBase+0.5)*scale-5);
+        s.text("-0.5 m",5,-(allSys.last().param.Lo+initBase-0.5)*scale+15);
 
         s.stroke(100);
         s.strokeWeight(2);
-        s.line(0,-(sys.param.Lo+initBase+0.5)*scale,30,-(sys.param.Lo+initBase+0.5)*scale);
-        s.line(0,-(sys.param.Lo+initBase+0.25)*scale,20,-(sys.param.Lo+initBase+0.25)*scale);
-        s.line(0,-(sys.param.Lo+initBase)*scale,sceneWidth,-(sys.param.Lo+initBase)*scale);
-        s.line(0,-(sys.param.Lo+initBase-0.25)*scale,20,-(sys.param.Lo+initBase-0.25)*scale);
-        s.line(0,-(sys.param.Lo+initBase-0.5)*scale,30,-(sys.param.Lo+initBase-0.5)*scale);
+        s.line(0,-(allSys.last().param.Lo+initBase+0.5)*scale,30,-(allSys.last().param.Lo+initBase+0.5)*scale);
+        s.line(0,-(allSys.last().param.Lo+initBase+0.25)*scale,20,-(allSys.last().param.Lo+initBase+0.25)*scale);
+        s.line(0,-(allSys.last().param.Lo+initBase)*scale,sceneWidth,-(allSys.last().param.Lo+initBase)*scale);
+        s.line(0,-(allSys.last().param.Lo+initBase-0.25)*scale,20,-(allSys.last().param.Lo+initBase-0.25)*scale);
+        s.line(0,-(allSys.last().param.Lo+initBase-0.5)*scale,30,-(allSys.last().param.Lo+initBase-0.5)*scale);
 
         s.strokeWeight(1);
 
         if(running && s.frameRate() > 10 && tNow < 120){
-            // tNow += 1/s.frameRate();
             tNow += 1/60.0;
         }
         s.stroke(0);
         s.fill(0);
         s.textSize(16);
         s.text(tNow.toFixed(2) + " s",20,-sceneHeight+40);
-        sys.drawSystem(tNow);
+        allSys.last().drawSystem(tNow);
 
         s.fill(100);
-        // s.rect(0,0,10,2*scale);
     };
 
     s.restartScene = function() {
@@ -504,28 +531,23 @@ var scene = new p5( function( s ) {
 }, 'scene-holder');
 
 var graph = new p5( function( s ) {
-    var posGraph;
-    var ampGraph;
-    var phaseGraph;
-    var phasePlane;
 
     //1: position, 2: amplitude, 3: phase shift, 4: phase plane
     s.graphDisp = 1;
     var dataPoints = 1000;
     var maxChanged = true;
+    var xRes, yRes;
 
-    function graphObj(xRes,yRes,graphType){
-        //pixel/unit
+    s.graphObj = function (xResIn,yResIn,graphType){
         this.t = new Array;
         this.y = new Array;
-        this.xRes = xRes;
         this.graphType = graphType;
 
         this.loadData = function () {
             switch (this.graphType) {
                 case 1:
                     this.t.push(tNow);
-                    this.y.push((sys.caseObj.boxPosition(tNow,sys.param)));
+                    this.y.push((allSys.last().caseObj.boxPosition(tNow,allSys.last().param)));
                     if (this.t.length === 1) {
                         this.max = Math.abs(this.y[this.y.length - 1]);
                         maxChanged = true;
@@ -535,33 +557,34 @@ var graph = new p5( function( s ) {
                             maxChanged = true;
                         }
                     }
-                    if (tNow > graphWidth / this.xRes) {
+                    if (tNow > graphWidth / xRes && s.graphDisp === 1) {
                         maxChanged = true;
-                        this.xRes = this.xRes*0.75;
+                        xRes *= 0.75;
                     }
+                    if (s.graphDisp === 1) yRes = canvasHeight/(2*this.max*1.8);
                     break;
                 case 2:
-                    for (i = 0.01; i < graphWidth / this.xRes; i += (graphWidth / this.xRes) / dataPoints) {
+                    for (i = 0.01; i < graphWidth / xRes; i += (graphWidth / xRes) / dataPoints) {
                         this.t.push(i);
-                        if (sys.caseObj.caseNum === 6) {
-                            this.y.push(sys.caseObj.magnitude(i, sys.param.z));
+                        if (allSys.last().caseObj.caseNum === 6) {
+                            this.y.push(allSys.last().caseObj.magnitude(i, allSys.last().param.z));
                         } else {
-                            this.y.push(Math.log(sys.caseObj.magnitude(i, sys.param.z)) / Math.log(10));
+                            this.y.push(Math.log(allSys.last().caseObj.magnitude(i, allSys.last().param.z)) / Math.log(10));
                         }
 
                         if (this.t.length === 1) {
                             this.max = (this.y[this.y.length - 1]);
                         } else {
-                            if (this.y[this.y.length - 1] > this.max) {
-                                this.max = this.y[this.y.length - 1];
+                            if (this.y.last() > this.max) {
+                                this.max = this.y.last();
                             }
                         }
                     }
                     break;
                 case 3:
-                    for (i = 0; i < graphWidth / this.xRes; i += (graphWidth / this.xRes) / dataPoints) {
+                    for (i = 0; i < graphWidth / xRes; i += (graphWidth / xRes) / dataPoints) {
                         this.t.push(i);
-                        this.y.push(sys.caseObj.phaseShift(i,sys.param.z));
+                        this.y.push(allSys.last().caseObj.phaseShift(i,allSys.last().param.z));
 
                         if (this.t.length === 1) {
                             this.max = (this.y[this.y.length - 1]);
@@ -574,15 +597,14 @@ var graph = new p5( function( s ) {
                     break;
                 case 4:
                     if (this.t.length === 0) {
-                        this.t.push((sys.caseObj.boxPosition(0,sys.param)));
-                        this.y.push((sys.caseObj.boxVelocity(0,sys.param)));
+                        this.t.push((allSys.last().caseObj.boxPosition(0,allSys.last().param)));
+                        this.y.push((allSys.last().caseObj.boxVelocity(0,allSys.last().param)));
                         this.xMax = Math.abs(this.t[this.t.length - 1]);
                         this.max = Math.abs(this.y[this.y.length - 1]);
                         maxChanged = true;
                     }
-                    this.t.push((sys.caseObj.boxPosition(tNow,sys.param)));
-                    this.y.push((sys.caseObj.boxVelocity(tNow,sys.param)));
-                    // console.log(this.y[this.y.length - 1]);
+                    this.t.push((allSys.last().caseObj.boxPosition(tNow,allSys.last().param)));
+                    this.y.push((allSys.last().caseObj.boxVelocity(tNow,allSys.last().param)));
                     if (Math.abs(this.y[this.y.length - 1]) > this.max) {
                         this.max = Math.abs(this.y[this.y.length - 1]);
                         maxChanged = true;
@@ -591,33 +613,33 @@ var graph = new p5( function( s ) {
                         this.xMax = Math.abs(this.t[this.t.length - 1]);
                         maxChanged = true;
                     }
-                    this.xRes = graphWidth/(2*this.xMax*1.5);
-
+                    if(s.graphDisp === 4) xRes = graphWidth/(2*this.xMax*1.5);
+                    if (s.graphDisp === 4) yRes = canvasHeight/(2*this.max*1.8);
                     break;
             }
-            this.yRes = canvasHeight/(2*this.max*1.8);
+
         };
 
         this.drawGraph = function () {
             s.stroke(0);
             s.strokeWeight(1.2);
             for(i = 0;i<this.t.length-1;i++){
-                s.line(this.t[i]*this.xRes,-this.y[i]*this.yRes,this.t[i+1]*this.xRes,-this.y[i+1]*this.yRes);
+                s.line(this.t[i]*xRes,-this.y[i]*yRes,this.t[i+1]*xRes,-this.y[i+1]*yRes);
             }
             if(this.graphType === 2){
                 s.stroke('red');
                 s.fill('red');
-                if(sys.caseObj.caseNum === 6){
-                    s.ellipse((sys.param.w/sys.param.wn)*this.xRes, -(sys.caseObj.magnitude(sys.param.w/sys.param.wn,sys.param.z))*this.yRes,10,10);
+                if(allSys.last().caseObj.caseNum === 6){
+                    s.ellipse((allSys.last().param.w/allSys.last().param.wn)*xRes, -(allSys.last().caseObj.magnitude(allSys.last().param.w/allSys.last().param.wn,allSys.last().param.z))*yRes,10,10);
                 } else {
-                    s.ellipse((sys.param.w/sys.param.wn)*this.xRes, -Math.log(sys.caseObj.magnitude(sys.param.w/sys.param.wn,sys.param.z))/Math.log(10)*this.yRes,10,10);
+                    s.ellipse((allSys.last().param.w/allSys.last().param.wn)*xRes, -Math.log(allSys.last().caseObj.magnitude(allSys.last().param.w/allSys.last().param.wn,allSys.last().param.z))/Math.log(10)*yRes,10,10);
                 }
                 s.stroke(0);
                 s.fill(0);
             } else if(this.graphType === 3){
                 s.stroke('red');
                 s.fill('red');
-                s.ellipse((sys.param.w/sys.param.wn)*this.xRes, -(sys.caseObj.phaseShift(sys.param.w/sys.param.wn,sys.param.z))*this.yRes,10,10);
+                s.ellipse((allSys.last().param.w/allSys.last().param.wn)*xRes, -(allSys.last().caseObj.phaseShift(allSys.last().param.w/allSys.last().param.wn,allSys.last().param.z))*yRes,10,10);
                 s.stroke(0);
                 s.fill(0);
             }
@@ -627,7 +649,7 @@ var graph = new p5( function( s ) {
             s.stroke(0);
             s.strokeWeight(1.2);
             var end = this.t.length-1;
-            s.line(this.t[end-1]*this.xRes,-this.y[end-1]*this.yRes,this.t[end]*this.xRes,-this.y[end]*this.yRes);
+            s.line(this.t[end-1]*xRes,-this.y[end-1]*yRes,this.t[end]*xRes,-this.y[end]*yRes);
         };
 
         this.drawGrid = function(){
@@ -646,63 +668,62 @@ var graph = new p5( function( s ) {
                 s.line(0,0,graphWidth,0);
             }
             s.strokeWeight(1);
-            // if(this.graphType === 4) console.log(this.xRes + " " + this.yRes + " " + this.max);
 
             if(this.graphType === 1){
-                tickSpaceX = Math.floor((graphWidth/this.xRes)/5);
+                tickSpaceX = Math.ceil((graphWidth/xRes)/6);
                 for(i=tickSpaceX;i<=graphWidth;i+=tickSpaceX){
-                    s.line(i*this.xRes,canvasHeight/2,i*this.xRes,-canvasHeight/2);
-                    s.text((i),i*this.xRes+3,canvasHeight/2-3);
+                    s.line(i*xRes,canvasHeight/2,i*xRes,-canvasHeight/2);
+                    s.text((i),i*xRes+3,canvasHeight/2-3);
                 }
+
             } else if(this.graphType === 4){
+
                 inc = Math.round(Math.log(this.xMax)/Math.log(10));
                 inc = inc - 1;
-                tickSpaceX = Math.round(Math.pow(10,-inc)*canvasHeight/(2*5*this.xRes))*Math.pow(10,inc);
-                for(j=tickSpaceX;j<=graphWidth/(2*this.xRes);j+=tickSpaceX){
-                    s.line(j*this.xRes,canvasHeight/2,j*this.xRes,-canvasHeight/2);
-                    s.line(-j*this.xRes,canvasHeight/2,-j*this.xRes,-canvasHeight/2);
+                tickSpaceX = Math.round(Math.pow(10,-inc)*canvasHeight/(2*5*xRes))*Math.pow(10,inc);
+                for(j=tickSpaceX;j<=graphWidth/(2*xRes);j+=tickSpaceX){
+                    s.line(j*xRes,canvasHeight/2,j*xRes,-canvasHeight/2);
+                    s.line(-j*xRes,canvasHeight/2,-j*xRes,-canvasHeight/2);
                     tickNum = j.toFixed(Math.abs(inc));
-                    s.text(tickNum,(j*this.xRes+5),-3);
-                    s.text(-tickNum,-(j*this.xRes-5),-3);
+                    s.text(tickNum,(j*xRes+5),-3);
+                    s.text(-tickNum,-(j*xRes-5),-3);
                 }
             } else {
-                for(i=0;i<=graphWidth;i+=this.xRes){
+                for(i=0;i<=graphWidth;i+=xRes){
                     s.line(i,canvasHeight/2,i,-canvasHeight/2);
-                    if(i !== 0) s.text((i/this.xRes).toFixed(0),i+3,canvasHeight/2-3);
+                    if(i !== 0) s.text((i/xRes).toFixed(0),i+3,canvasHeight/2-3);
                 }
             }
 
 
             inc = Math.round(Math.log(this.max)/Math.log(10));
             inc = inc - 1;
-            var tickSpaceY = Math.round(Math.pow(10,-inc)*canvasHeight/(2*5*this.yRes))*Math.pow(10,inc);
-            for(j=tickSpaceY;j<=canvasHeight/(2*this.yRes);j+=tickSpaceY){
+            var tickSpaceY = Math.round(Math.pow(10,-inc)*canvasHeight/(2*5*yRes))*Math.pow(10,inc);
+            for(j=tickSpaceY;j<=canvasHeight/(2*yRes);j+=tickSpaceY){
                 if(this.graphType === 4){
-                    s.line(-graphWidth/2,j*this.yRes,graphWidth/2,j*this.yRes);
-                    s.line(-graphWidth/2,-j*this.yRes,graphWidth/2,-j*this.yRes);
+                    s.line(-graphWidth/2,j*yRes,graphWidth/2,j*yRes);
+                    s.line(-graphWidth/2,-j*yRes,graphWidth/2,-j*yRes);
                 } else {
-                    s.line(0,j*this.yRes,graphWidth,j*this.yRes);
-                    s.line(0,-j*this.yRes,graphWidth,-j*this.yRes);
+                    s.line(0,j*yRes,graphWidth,j*yRes);
+                    s.line(0,-j*yRes,graphWidth,-j*yRes);
                 }
                 tickNum = j.toFixed(Math.abs(inc));
-                if(this.graphType === 2 && (sys.caseObj.caseNum === 4 || sys.caseObj.caseNum === 5)){
-                    s.text("10^" + tickNum,0,-(j*this.yRes+3));
-                    s.text("10^" + (-tickNum),0,(j*this.yRes-3));
+                if(this.graphType === 2 && (allSys.last().caseObj.caseNum === 4 || allSys.last().caseObj.caseNum === 5)){
+                    s.text("10^" + tickNum,0,-(j*yRes+3));
+                    s.text("10^" + (-tickNum),0,(j*yRes-3));
                 } else {
-                    s.text(tickNum,0,-(j*this.yRes+3));
-                    s.text(-tickNum,0,(j*this.yRes-3));
+                    s.text(tickNum,0,-(j*yRes+3));
+                    s.text(-tickNum,0,(j*yRes-3));
                 }
             }
         }
     }
 
     s.setup = function() {
-        graphWidth = ($("#col1").width()+10)*3-10;//700;
+        //700;
         s.createCanvas(graphWidth, canvasHeight);
-        posGraph = new graphObj(graphWidth/5,graphWidth/5,1);
-        ampGraph = new graphObj(graphWidth/4,canvasHeight/2,2);
-        phaseGraph = new graphObj(graphWidth/4,canvasHeight/2,3);
-        phasePlane = new graphObj(graphWidth/4,canvasHeight/2,4);
+        xRes =  graphWidth / 5;
+        yRes =  graphWidth / 5;
     };
 
     s.draw = function() {
@@ -711,59 +732,78 @@ var graph = new p5( function( s ) {
         } else {
             s.translate(0,canvasHeight/2);
         }
-        if(running && s.frameRate()!==0){
-            posGraph.loadData();
-            phasePlane.loadData();
+        if(running){
+            allSys.last().posGraph.loadData();
+            allSys.last().phasePlane.loadData();
         }
-
+        var v;
         switch (s.graphDisp){
             case 1:
                 if(maxChanged){
                     s.background(240);
-                    console.log("draw all pos: " + posGraph.t.length);
-                    posGraph.drawGrid();
-                    posGraph.drawGraph();
+                    allSys.last().posGraph.drawGrid();
+                    for(v=0;v<allSys.length;v++){
+                        allSys[v].posGraph.drawGraph();
+                    }
                     maxChanged = false;
                 } else {
-                    posGraph.drawNext();
+                    if(running) allSys.last().posGraph.drawNext();
                 }
 
                 break;
             case 2:
                 s.background(240);
-                ampGraph.drawGrid();
-                ampGraph.drawGraph();
+                allSys.last().ampGraph.drawGrid();
+                for(v=0;v<allSys.length;v++){
+                    if (allSys[v].caseObj.caseNum > 3){
+                        if (maxChanged){
+                            allSys[v].ampGraph.loadData();
+                            console.log("aa");
+                            maxChanged = false;
+                        }
+                        allSys[v].ampGraph.drawGraph();
+                    }
+                }
                 break;
             case 3:
                 s.background(240);
-                phaseGraph.drawGrid();
-                phaseGraph.drawGraph();
+                for(v=0;v<allSys.length;v++){
+
+                }
+                allSys.last().phaseGraph.drawGrid();
+                allSys.last().phaseGraph.drawGraph();
                 break;
             case 4:
                 if(maxChanged){
                     s.background(240);
-                    console.log("draw all phase: " + phasePlane.t.length);
-                    phasePlane.drawGrid();
-                    phasePlane.drawGraph();
+                    allSys.last().phasePlane.drawGrid();
+                    for(v=0;v<allSys.length;v++){
+                        allSys[v].phasePlane.drawGraph();
+                    }
                     maxChanged = false;
                 } else {
-                    phasePlane.drawNext();
+                    allSys.last().phasePlane.drawNext();
                 }
                 break;
         }
-
-
     };
 
+    s.clear = function(){
+        allSys.last().posGraph.loadData();
+        allSys.last().phasePlane.loadData();
+    }
+
     s.redrawGraph = function(){
-        posGraph = new graphObj(graphWidth/5,graphWidth/5,1);
-        ampGraph = new graphObj(graphWidth/4,canvasHeight/2,2);
-        phaseGraph = new graphObj(graphWidth/4,canvasHeight/2,3);
-        phasePlane = new graphObj(graphWidth/5,canvasHeight/5,4);
         maxChanged = true;
-        if(sys.caseObj.caseNum > 3){
-            ampGraph.loadData();
-            phaseGraph.loadData();
+        for(i=0;i<allSys.length;i++) {
+            // allSys[i].posGraph = new s.graphObj(graphWidth / 5, graphWidth / 5, 1);
+            // allSys[i].ampGraph = new s.graphObj(graphWidth / 4, canvasHeight / 2, 2);
+            // allSys[i].phaseGraph = new s.graphObj(graphWidth / 4, canvasHeight / 2, 3);
+            // allSys[i].phasePlane = new s.graphObj(graphWidth / 5, canvasHeight / 5, 4);
+            if (allSys[i].caseObj.caseNum > 3) {
+                allSys[i].ampGraph.loadData();
+                allSys[i].phaseGraph.loadData();
+            }
         }
         s.loop();
     };
@@ -774,16 +814,18 @@ var graph = new p5( function( s ) {
     };
 
     s.setGraphRes = function (){
-        posGraph.xRes = graphWidth/5;
-        posGraph.yRes = graphWidth/5;
-        phasePlane.xRes = graphWidth/5;
-        phasePlane.yRes = graphWidth/5;
-        maxChanged = true;
-        ampGraph = new graphObj(graphWidth/4,canvasHeight/2,2);
-        phaseGraph = new graphObj(graphWidth/4,canvasHeight/2,3);
-        if(sys.caseObj.caseNum > 3){
-            ampGraph.loadData();
-            phaseGraph.loadData();
+        for(i=0;i<allSys.length;i++) {
+            // allSys[i].posGraph.xRes = graphWidth / 5;
+            // allSys[i].posGraph.yRes = graphWidth / 5;
+            // allSys[i].phasePlane.xRes = graphWidth / 5;
+            // allSys[i].phasePlane.yRes = graphWidth / 5;
+            maxChanged = true;
+            allSys[i].ampGraph = new s.graphObj(graphWidth / 4, canvasHeight / 2, 2);
+            allSys[i].phaseGraph = new s.graphObj(graphWidth / 4, canvasHeight / 2, 3);
+            if (allSys[i].caseObj.caseNum > 3) {
+                allSys[i].ampGraph.loadData();
+                allSys[i].phaseGraph.loadData();
+            }
         }
     };
 
@@ -792,52 +834,52 @@ var graph = new p5( function( s ) {
 
 
 function updateUI(){
-    kDisp.innerHTML = "Spring Stiffness: " + sys.param.k.toFixed(2) + " N/m";
-    kSlider.value = sys.param.k.toFixed(2);
+    kDisp.innerHTML = "Spring Stiffness: " + allSys.last().param.k.toFixed(2) + " N/m";
+    kSlider.value = allSys.last().param.k.toFixed(2);
 
-    mDisp.innerHTML = "Mass: " + sys.param.m.toFixed(2) + " kg";
-    mSlider.value = sys.param.m.toFixed(2);
+    mDisp.innerHTML = "Mass: " + allSys.last().param.m.toFixed(2) + " kg";
+    mSlider.value = allSys.last().param.m.toFixed(2);
 
-    wnDisp.innerHTML = "Natural Freq: " + sys.param.wn.toFixed(3) + " rad/s";
-    wnSlider.value = sys.param.wn.toFixed(3);
+    wnDisp.innerHTML = "Natural Freq: " + allSys.last().param.wn.toFixed(3) + " rad/s";
+    wnSlider.value = allSys.last().param.wn.toFixed(3);
 
-    xoDisp.innerHTML = "Initial Position: " + sys.param.xo.toFixed(2) + " m";
-    xoSlider.value = sys.param.xo.toFixed(2);
+    xoDisp.innerHTML = "Initial Position: " + allSys.last().param.xo.toFixed(2) + " m";
+    xoSlider.value = allSys.last().param.xo.toFixed(2);
 
-    voDisp.innerHTML = "Initial Velocity: " + sys.param.vo.toFixed(3) + " m/s";
-    voSlider.value = sys.param.vo.toFixed(3);
+    voDisp.innerHTML = "Initial Velocity: " + allSys.last().param.vo.toFixed(3) + " m/s";
+    voSlider.value = allSys.last().param.vo.toFixed(3);
 
-    if(sys.caseObj.caseNum > 2){
-        cDisp.innerHTML = "Dashpot Coeft.: " + sys.param.c.toFixed(2) + " Ns/m";
-        cSlider.value = sys.param.c.toFixed(2);
+    if(allSys.last().caseObj.caseNum > 2){
+        cDisp.innerHTML = "Dashpot Coeft.: " + allSys.last().param.c.toFixed(2) + " Ns/m";
+        cSlider.value = allSys.last().param.c.toFixed(2);
 
-        zDisp.innerHTML = "Damping Coeft.: " + sys.param.z.toFixed(3);
-        zSlider.value = sys.param.z.toFixed(2);
+        zDisp.innerHTML = "Damping Coeft. ($\\zeta$): " + allSys.last().param.z.toFixed(3);
+        zSlider.value = allSys.last().param.z.toFixed(2);
 
     } else {
         cDisp.innerHTML = "Dashpot Coeft.: N/A";
         zDisp.innerHTML = "Damping Coeft.: N/A";
     }
 
-    if(sys.caseObj.caseNum > 3) {
-        ampDisp.innerHTML = "Amplification: " + sys.param.M.toFixed(2);
-        ampSlider.value = sys.param.M.toFixed(2);
+    if(allSys.last().caseObj.caseNum > 3) {
+        ampDisp.innerHTML = "Amplification: " + allSys.last().param.K.toFixed(3);
+        ampSlider.value = allSys.last().param.K.toFixed(2);
 
-        wDisp.innerHTML = "Frequency: " + sys.param.w.toFixed(2) + " rad/s";
-        wSlider.value = sys.param.w.toFixed(2);
+        wDisp.innerHTML = "Frequency: " + allSys.last().param.w.toFixed(2) + " rad/s";
+        wSlider.value = allSys.last().param.w.toFixed(2);
 
-        switch (sys.caseObj.caseNum){
+        switch (allSys.last().caseObj.caseNum){
             case 4:
-                magDisp.innerHTML = "Force Amplitude: " + sys.param.Yo.toFixed(2) + " N";
+                magDisp.innerHTML = "Force Amplitude: " + allSys.last().param.Yo.toFixed(2) + " N";
                 break;
             case 5:
-                magDisp.innerHTML = "Base Amplitude: " + sys.param.Yo.toFixed(2) + " m";
+                magDisp.innerHTML = "Base Amplitude: " + allSys.last().param.Yo.toFixed(2) + " m";
                 break;
             case 6:
-                magDisp.innerHTML = "Rotor Length: " + sys.param.Yo.toFixed(2) + " m";
+                magDisp.innerHTML = "Rotor Length: " + allSys.last().param.Yo.toFixed(2) + " m";
                 break;
         }
-        magSlider.value = sys.param.Yo.toFixed(2);
+        magSlider.value = allSys.last().param.Yo.toFixed(2);
     } else {
         ampDisp.innerHTML = "Amplification: N/A";
         wDisp.innerHTML = "Frequency: N/A";
@@ -857,16 +899,27 @@ function updateUI(){
         $("#sys_div").removeClass("activeInput");
         $("#der_div").removeClass("inactiveInput");
     }
+
+    // MathJax.Hub.Queue(["Typeset",MathJax.Hub]);
+}
+
+function clear(){
+    var current = allSys.last().caseObj.caseNum;
+    allSys = [new scene.System(current)];
+    allSys.last().reCalc();
+    scene.restartScene();
+    graph.clear();
 }
 
 function restart(){
-    sys.reCalc();
+    allSys.last().reCalc();
     scene.restartScene();
-    if(sys.caseObj.caseNum < 4 && (graph.graphDisp === 2 || graph.graphDisp === 3)){
+    if(allSys.last().caseObj.caseNum < 4 && (graph.graphDisp === 2 || graph.graphDisp === 3)){
         graph.switchGraph(1);
     }
-    graph.redrawGraph();
+    //graph.redrawGraph();
 }
+
 window.addEventListener('resize', function(event){
     graphWidth = (col1.width()+10)*3-10;
     sceneWidth = col1.width();
@@ -878,11 +931,11 @@ window.addEventListener('resize', function(event){
 function changeUI(){
     normalInput = true;
 
-    if (sys.caseObj.caseNum > 3){
+    if (allSys.last().caseObj.caseNum > 3){
         if(! col1.has('#ext_header').length){
             $(".ext_controls").show();
         }
-        switch (sys.caseObj.caseNum) {
+        switch (allSys.last().caseObj.caseNum) {
             case 4:
                 magSlider.setAttribute("max",30);
                 break;
@@ -898,16 +951,25 @@ function changeUI(){
     }
 }
 
+function sliderChanged(){
+    running = false;
+    if(newSys) {
+        allSys.push(new scene.System(allSys.last().caseObj.caseNum));
+        allSys.last().param = jQuery.extend({},allSys[allSys.length-2].param);
+        scene.restartScene();
+    }
+    newSys = false;
+}
+
 window.onload = function() {
     col1 = $("#col1");
 
-    //HTML defined nodes
     kDisp = document.getElementById("k_disp");
     kSlider = document.getElementById("k_slider");
     kSlider.oninput = function () {
         normalInput = true;
-        running = false;
-        sys.param.k = parseFloat(kSlider.value);
+        sliderChanged();
+        allSys.last().param.k = parseFloat(kSlider.value);
         restart();
     };
 
@@ -915,8 +977,8 @@ window.onload = function() {
     mDisp = document.getElementById("m_disp");
     mSlider.oninput = function () {
         normalInput = true;
-        running = false;
-        sys.param.m = parseFloat(mSlider.value);
+        sliderChanged();
+        allSys.last().param.m = parseFloat(mSlider.value);
         restart();
     };
 
@@ -924,24 +986,24 @@ window.onload = function() {
     cDisp = document.getElementById("c_disp");
     cSlider.oninput = function () {
         normalInput = true;
-        running = false;
-        sys.param.c = parseFloat(cSlider.value);
+        sliderChanged();
+        allSys.last().param.c = parseFloat(cSlider.value);
         restart();
     };
 
     xoSlider = document.getElementById("xo_slider");
     xoDisp = document.getElementById("xo_disp");
     xoSlider.oninput = function () {
-        running = false;
-        sys.param.xo = parseFloat(xoSlider.value);
+        sliderChanged();
+        allSys.last().param.xo = parseFloat(xoSlider.value);
         restart();
     };
 
     voSlider = document.getElementById("vo_slider");
     voDisp = document.getElementById("vo_disp");
     voSlider.oninput = function () {
-        running = false;
-        sys.param.vo = parseFloat(voSlider.value);
+        sliderChanged();
+        allSys.last().param.vo = parseFloat(voSlider.value);
         restart();
     };
 
@@ -949,8 +1011,8 @@ window.onload = function() {
     wnDisp = document.getElementById("wn_disp");
     wnSlider.oninput = function () {
         normalInput = false;
-        running = false;
-        sys.param.wn = parseFloat(wnSlider.value);
+        sliderChanged();
+        allSys.last().param.wn = parseFloat(wnSlider.value);
         restart();
     };
 
@@ -958,8 +1020,8 @@ window.onload = function() {
     zDisp = document.getElementById("z_disp");
     zSlider.oninput = function () {
         normalInput = false;
-        running = false;
-        sys.param.z = parseFloat(zSlider.value);
+        sliderChanged();
+        allSys.last().param.z = parseFloat(zSlider.value);
         restart();
     };
 
@@ -967,60 +1029,60 @@ window.onload = function() {
     ampDisp = document.getElementById("amp_disp");
     ampSlider.oninput = function () {
         normalInput = false;
-        running = false;
-        sys.param.M = parseFloat(ampSlider.value);
-        sys.param.z = 1.0/(2*sys.param.M);
-        sys.param.wn = sys.param.w;
+        sliderChanged();
+        allSys.last().param.K = parseFloat(ampSlider.value);
         restart();
     };
 
     wSlider = document.getElementById("w_slider");
     wDisp = document.getElementById("w_disp");
     wSlider.oninput = function () {
-        running = false;
-        sys.param.w = parseFloat(wSlider.value);
+        sliderChanged();
+        allSys.last().param.w = parseFloat(wSlider.value);
         restart();
     };
 
     magSlider = document.getElementById("mag_slider");
     magDisp = document.getElementById("mag_disp");
     magSlider.oninput = function () {
-        running = false;
-        sys.param.Yo = parseFloat(magSlider.value);
+        sliderChanged();
+        allSys.last().param.Yo = parseFloat(magSlider.value);
         restart();
     };
-
-
-    // document.getElementById("x_zoom").onclick = function(){
-    //     graph.xRes = graphWidth/this.value;
-    //     graph.redrawGraph();
-    // };
 
     document.getElementById("stop_btn").onclick = function(){
         running = false;
     };
 
     document.getElementById("start_btn").onclick = function(){
+        newSys = true;
         running = true;
+        // for(i=0;i<allSys.length;i++){
+        //     console.log(allSys[i].param);
+        // }
     };
+
+    document.getElementById("reset_btn").onclick = function(){
+        clear();
+    }
 
     document.getElementById("pos_graph").onclick = function(){
         graph.switchGraph(1);
     };
 
     document.getElementById("amp_graph").onclick = function(){
-        if(sys.caseObj.caseNum > 3){
+        if(allSys.last().caseObj.caseNum > 3){
             graph.switchGraph(2);
         } else {
-            window.alert("No Amplitude Graph for Case " + sys.caseObj.caseNum);
+            window.alert("No Amplitude Graph for Case " + allSys.last().caseObj.caseNum);
         }
     };
 
     document.getElementById("phase_graph").onclick = function(){
-        if(sys.caseObj.caseNum > 3){
+        if(allSys.last().caseObj.caseNum > 3){
             graph.switchGraph(3);
         } else {
-            window.alert("No Phase Shift Graph for Case " + sys.caseObj.caseNum);
+            window.alert("No Phase Shift Graph for Case " + allSys.last().caseObj.caseNum);
         }
     };
 
@@ -1034,31 +1096,36 @@ window.onload = function() {
     };
 
     document.getElementById("case1_button").onclick = function() {
-        sys = new scene.System(case1.defaultParam, case1);
+        running = false;
+        allSys.push(new scene.System(1));
         changeUI();
         restart();
         document.getElementById("header").innerHTML = "Case I: Free Vibration on Spring";
     };
     document.getElementById("case3_button").onclick = function(){
-        sys = new scene.System(case3.defaultParam,case3);
+        running = false;
+        allSys.push(new scene.System(3));
         changeUI();
         restart();
         document.getElementById("header").innerHTML = "Case III: Free Vibration on Spring and Dashpot";
     };
     document.getElementById("case4_button").onclick = function(){
-        sys = new scene.System(case4.defaultParam,case4);
+        running = false;
+        allSys.push(new scene.System(4));
         changeUI();
         restart();
         document.getElementById("header").innerHTML = "Case IV: Externally Forced System";
     };
     document.getElementById("case5_button").onclick = function(){
-        sys = new scene.System(case5.defaultParam,case5);
+        running = false;
+        allSys.push(new scene.System(5));
         changeUI();
         restart();
         document.getElementById("header").innerHTML = "Case V: Base Excited System";
     };
     document.getElementById("case6_button").onclick = function(){
-        sys = new scene.System(case6.defaultParam,case6);
+        running = false;
+        allSys.push(new scene.System(6));
         changeUI();
         restart();
         document.getElementById("header").innerHTML = "Case VI: Rotor Excited System";
