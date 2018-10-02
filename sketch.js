@@ -901,6 +901,7 @@ function updateUI(){
     }
 
     // MathJax.Hub.Queue(["Typeset",MathJax.Hub]);
+    
 }
 
 function clear(){
